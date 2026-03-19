@@ -845,6 +845,11 @@ class PrintJob:
     gcode_file_downloaded: str
     gcode_user: str
     gcode_secret: str
+    gcode_model_printing_time: str
+    gcode_total_estimated_time: str
+    gcode_total_filament_length: str
+    gcode_total_filament_volume: str
+    gcode_total_filament_weight: str
     _subtask_name: str
     start_time: datetime
     end_time: datetime
@@ -874,6 +879,11 @@ class PrintJob:
         self.gcode_file_downloaded = ""
         self.gcode_user = ""
         self.gcode_secret = ""
+        self.gcode_model_printing_time = ""
+        self.gcode_total_estimated_time = ""
+        self.gcode_total_filament_length = ""
+        self.gcode_total_filament_volume = ""
+        self.gcode_total_filament_weight = ""
         self._subtask_name = ""
         self.start_time = None
         self.end_time = None
@@ -1698,6 +1708,11 @@ class PrintJob:
                             # Extract User and Secret from the first few lines of the gcode file
                             self.gcode_user = ""
                             self.gcode_secret = ""
+                            self.gcode_model_printing_time = ""
+                            self.gcode_total_estimated_time = ""
+                            self.gcode_total_filament_length = ""
+                            self.gcode_total_filament_volume = ""
+                            self.gcode_total_filament_weight = ""
                             try:
                                 with open(gcode_path, 'r', encoding='utf-8') as gcode_file:
                                     for line in gcode_file:
@@ -1705,11 +1720,24 @@ class PrintJob:
                                             self.gcode_user = line.split('; User:')[1].strip()
                                         elif line.startswith('; Secret:'):
                                             self.gcode_secret = line.split('; Secret:')[1].strip()
-                                        elif line.startswith('; model printing time:') or line.startswith('; total estimated time:') or line.startswith('; total layer number:'):
-                                            # User and Secret are near the top, stop reading early
+                                        elif 'model printing time:' in line:
+                                            # This line usually contains both model printing time and total estimated time
+                                            parts = line.split(';')
+                                            for part in parts:
+                                                if 'model printing time:' in part:
+                                                    self.gcode_model_printing_time = part.split('model printing time:')[1].replace(' ', '').strip()
+                                                if 'total estimated time:' in part:
+                                                    self.gcode_total_estimated_time = part.split('total estimated time:')[1].replace(' ', '').strip()
+                                        elif 'total filament length [mm]' in line:
+                                            self.gcode_total_filament_length = line.split(':')[-1].replace(' ', '').strip()
+                                        elif 'total filament volume [cm^3]' in line:
+                                            self.gcode_total_filament_volume = line.split(':')[-1].replace(' ', '').strip()
+                                        elif 'total filament weight [g]' in line:
+                                            self.gcode_total_filament_weight = line.split(':')[-1].replace(' ', '').strip()
+                                        elif line.startswith('; HEADER_BLOCK_END'):
                                             break
                             except Exception as parse_error:
-                                LOGGER.error(f"Error parsing gcode for user/secret: {parse_error}")
+                                LOGGER.error(f"Error parsing gcode for metadata: {parse_error}")
 
                         except Exception as e:
                             self.gcode_file_downloaded = "ERROR"

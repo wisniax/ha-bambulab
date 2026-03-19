@@ -508,6 +508,21 @@
       "gcode_secret": {
         "name": "Gcode secret"
       },
+      "gcode_model_printing_time": {
+        "name": "Gcode model printing time"
+      },
+      "gcode_total_estimated_time": {
+        "name": "Gcode total estimated time"
+      },
+      "gcode_total_filament_length": {
+        "name": "Gcode total filament length [mm]"
+      },
+      "gcode_total_filament_volume": {
+        "name": "Gcode total filament volume [cm^3]"
+      },
+      "gcode_total_filament_weight": {
+        "name": "Gcode total filament weight [g]"
+      },
       "remaining_drying_time": {
         "name": "Remaining drying time"
       },

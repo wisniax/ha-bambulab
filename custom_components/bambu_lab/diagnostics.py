@@ -23,6 +23,7 @@ TO_REDACT = [
     "sn",
     "title",
     "username",
+    "gcode_secret",
     "cover",
     "deviceId",
     "modelId"
