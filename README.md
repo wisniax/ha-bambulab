@@ -14,7 +14,7 @@
 
 # Bambu Lab
 
-A Home Assistant Integration for Bambu Lab printers.
+A Home Assistant Integration for Bambu Lab printers. Modified to include User name and some other extra metadata.
 
 Join us on [Discord](https://discord.gg/rsUHAW3DKz)
 
