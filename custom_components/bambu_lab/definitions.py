@@ -559,6 +559,13 @@ PRINTER_SENSORS: tuple[BambuLabSensorEntityDescription, ...] = (
         value_fn=lambda self: self.coordinator.get_model().print_job.gcode_total_filament_weight,
     ),
     BambuLabSensorEntityDescription(
+        key="gcode_verified_user",
+        translation_key="gcode_verified_user",
+        icon="mdi:account-check",
+        available_fn=lambda self: self.coordinator.get_model().print_job.gcode_verified_user != "",
+        value_fn=lambda self: self.coordinator.get_model().print_job.gcode_verified_user,
+    ),
+    BambuLabSensorEntityDescription(
         key="subtask_name",
         translation_key="subtask_name",
         value_fn=lambda self: self.coordinator.get_model().print_job.subtask_name,

@@ -1,0 +1,15 @@
+{
+  "CUSTOM_AUTH_SECRET_KEY": "your_secret_key",
+  "users": [
+    {
+      "username": "Adam",
+      "secret": "moj_sekret",
+      "enabled": true
+    },
+    {
+      "username": "ExampleUser",
+      "secret": "password123",
+      "enabled": false
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import ftplib
+import hashlib
 import json
+import logging
 import math
 import os
 import re
@@ -850,6 +852,7 @@ class PrintJob:
     gcode_total_filament_length: str
     gcode_total_filament_volume: str
     gcode_total_filament_weight: str
+    gcode_verified_user: str
     _subtask_name: str
     start_time: datetime
     end_time: datetime
@@ -884,6 +887,7 @@ class PrintJob:
         self.gcode_total_filament_length = ""
         self.gcode_total_filament_volume = ""
         self.gcode_total_filament_weight = ""
+        self.gcode_verified_user = "false"
         self._subtask_name = ""
         self.start_time = None
         self.end_time = None
@@ -1713,6 +1717,7 @@ class PrintJob:
                             self.gcode_total_filament_length = ""
                             self.gcode_total_filament_volume = ""
                             self.gcode_total_filament_weight = ""
+                            self.gcode_verified_user = "false"
                             try:
                                 with open(gcode_path, 'r', encoding='utf-8') as gcode_file:
                                     for line in gcode_file:
@@ -1728,6 +1733,8 @@ class PrintJob:
                                                     self.gcode_model_printing_time = part.split('model printing time:')[1].replace(' ', '').strip()
                                                 if 'total estimated time:' in part:
                                                     self.gcode_total_estimated_time = part.split('total estimated time:')[1].replace(' ', '').strip()
+                                        elif 'total layer number:' in line:
+                                            self.total_layers = int(line.split('total layer number:')[1].strip())
                                         elif 'total filament length [mm]' in line:
                                             self.gcode_total_filament_length = line.split(':')[-1].replace(' ', '').strip()
                                         elif 'total filament volume [cm^3]' in line:
@@ -1736,6 +1743,47 @@ class PrintJob:
                                             self.gcode_total_filament_weight = line.split(':')[-1].replace(' ', '').strip()
                                         elif line.startswith('; HEADER_BLOCK_END'):
                                             break
+                                
+                                # Verify User
+                                if self.gcode_user != "" and self.gcode_secret != "":
+                                    # Load auth data
+                                    auth_data = None
+                                    # Try to load custom_components/bambu_lab/auth_users.json first
+                                    # Then fallback to custom_components/bambu_lab/auth_users_example.json
+                                    auth_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'auth_users.json')
+                                    if not os.path.exists(auth_path):
+                                        auth_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'auth_users_example.json')
+                                    
+                                    if os.path.exists(auth_path):
+                                        try:
+                                            with open(auth_path, 'r') as f:
+                                                auth_data = json.load(f)
+                                        except Exception as e:
+                                            LOGGER.error(f"Failed to load auth data from {auth_path}: {e}")
+
+                                    if auth_data:
+                                        global_key = auth_data.get('CUSTOM_AUTH_SECRET_KEY', "")
+                                        user_info = next((u for u in auth_data.get('users', []) if u.get('username') == self.gcode_user and u.get('enabled')), None)
+                                        
+                                        if user_info:
+                                            user_secret = user_info.get('secret', "")
+                                            # Construct print_data for hash
+                                            # It's: model_printing_time + total_estimated_time + total_layers + concatenated filament length + volume + weight
+                                            # All spaces stripped.
+                                            print_data = self.gcode_model_printing_time
+                                            print_data += self.gcode_total_estimated_time
+                                            print_data += str(self.total_layers)
+                                            # filament stats: concatenated values without commas
+                                            print_data += self.gcode_total_filament_length.replace(',', '')
+                                            print_data += self.gcode_total_filament_volume.replace(',', '')
+                                            print_data += self.gcode_total_filament_weight.replace(',', '')
+                                            
+                                            combined = user_secret + print_data + global_key
+                                            calculated_sha = hashlib.sha256(combined.encode('utf-8')).hexdigest()
+                                            
+                                            if calculated_sha == self.gcode_secret:
+                                                self.gcode_verified_user = "true"
+
                             except Exception as parse_error:
                                 LOGGER.error(f"Error parsing gcode for metadata: {parse_error}")
 

@@ -523,6 +523,9 @@
       "gcode_total_filament_weight": {
         "name": "Gcode total filament weight [g]"
       },
+      "gcode_verified_user": {
+        "name": "Verified User"
+      },
       "remaining_drying_time": {
         "name": "Remaining drying time"
       },
