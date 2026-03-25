@@ -1746,43 +1746,52 @@ class PrintJob:
                                 
                                 # Verify User
                                 if self.gcode_user != "" and self.gcode_secret != "":
-                                    # Load auth data
-                                    auth_data = None
-                                    # Try to load custom_components/bambu_lab/auth_users.json first
-                                    # Then fallback to custom_components/bambu_lab/auth_users_example.json
-                                    auth_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'auth_users.json')
-                                    if not os.path.exists(auth_path):
-                                        auth_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'auth_users_example.json')
-                                    
-                                    if os.path.exists(auth_path):
-                                        try:
-                                            with open(auth_path, 'r') as f:
-                                                auth_data = json.load(f)
-                                        except Exception as e:
-                                            LOGGER.error(f"Failed to load auth data from {auth_path}: {e}")
+                                    # Load auth secret
+                                    global_key = ""
+                                    auth_secret_path = "/root/config/auth_secret.json"
+                                    if not os.path.exists(auth_secret_path):
+                                        auth_secret_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "auth_secret_example.json")
 
-                                    if auth_data:
-                                        global_key = auth_data.get('CUSTOM_AUTH_SECRET_KEY', "")
-                                        user_info = next((u for u in auth_data.get('users', []) if u.get('username') == self.gcode_user and u.get('enabled')), None)
+                                    if os.path.exists(auth_secret_path):
+                                        try:
+                                            with open(auth_secret_path, "r") as f:
+                                                auth_secret_data = json.load(f)
+                                                global_key = auth_secret_data.get("CUSTOM_AUTH_SECRET_KEY", "")
+                                        except Exception as e:
+                                            LOGGER.error(f"Failed to load auth secret from {auth_secret_path}: {e}")
+
+                                    # Load auth users
+                                    user_info = None
+                                    auth_users_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "auth_users.json")
+                                    if not os.path.exists(auth_users_path):
+                                        auth_users_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "auth_users_example.json")
+
+                                    if os.path.exists(auth_users_path):
+                                        try:
+                                            with open(auth_users_path, 'r') as f:
+                                                auth_users_data = json.load(f)
+                                                user_info = next((u for u in auth_users_data.get("users", []) if u.get("username") == self.gcode_user and u.get("enabled")), None)
+                                        except Exception as e:
+                                            LOGGER.error(f"Failed to load auth users from {auth_users_path}: {e}")
+
+                                    if user_info:
+                                        user_secret = user_info.get('secret', "")
+                                        # Construct print_data for hash
+                                        # It's: model_printing_time + total_estimated_time + total_layers + concatenated filament length + volume + weight
+                                        # All spaces stripped.
+                                        print_data = self.gcode_model_printing_time
+                                        print_data += self.gcode_total_estimated_time
+                                        print_data += str(self.total_layers)
+                                        # filament stats: concatenated values without commas
+                                        print_data += self.gcode_total_filament_length.replace(',', '')
+                                        print_data += self.gcode_total_filament_volume.replace(',', '')
+                                        print_data += self.gcode_total_filament_weight.replace(',', '')
                                         
-                                        if user_info:
-                                            user_secret = user_info.get('secret', "")
-                                            # Construct print_data for hash
-                                            # It's: model_printing_time + total_estimated_time + total_layers + concatenated filament length + volume + weight
-                                            # All spaces stripped.
-                                            print_data = self.gcode_model_printing_time
-                                            print_data += self.gcode_total_estimated_time
-                                            print_data += str(self.total_layers)
-                                            # filament stats: concatenated values without commas
-                                            print_data += self.gcode_total_filament_length.replace(',', '')
-                                            print_data += self.gcode_total_filament_volume.replace(',', '')
-                                            print_data += self.gcode_total_filament_weight.replace(',', '')
-                                            
-                                            combined = user_secret + print_data + global_key
-                                            calculated_sha = hashlib.sha256(combined.encode('utf-8')).hexdigest()
-                                            
-                                            if calculated_sha == self.gcode_secret:
-                                                self.gcode_verified_user = "true"
+                                        combined = user_secret + print_data + global_key
+                                        calculated_sha = hashlib.sha256(combined.encode('utf-8')).hexdigest()
+                                        
+                                        if calculated_sha == self.gcode_secret:
+                                            self.gcode_verified_user = "true"
 
                             except Exception as parse_error:
                                 LOGGER.error(f"Error parsing gcode for metadata: {parse_error}")
