@@ -3,12 +3,14 @@
     {
       "username": "Adam",
       "secret": "moj_sekret",
-      "enabled": true
+      "enabled": true,
+      "allowed_prefixes": ["SUP_", "AGH_"]
     },
     {
       "username": "ExampleUser",
       "secret": "password123",
-      "enabled": false
+      "enabled": false,
+      "allowed_prefixes": ["TEST"]
     }
   ]
 }

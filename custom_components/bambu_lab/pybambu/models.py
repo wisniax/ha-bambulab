@@ -853,6 +853,8 @@ class PrintJob:
     gcode_total_filament_volume: str
     gcode_total_filament_weight: str
     gcode_verified_user: str
+    gcode_user_on_list: str
+    gcode_user_allowed_prefix: str
     _subtask_name: str
     start_time: datetime
     end_time: datetime
@@ -888,6 +890,8 @@ class PrintJob:
         self.gcode_total_filament_volume = ""
         self.gcode_total_filament_weight = ""
         self.gcode_verified_user = "false"
+        self.gcode_user_on_list = "false"
+        self.gcode_user_allowed_prefix = "false"
         self._subtask_name = ""
         self.start_time = None
         self.end_time = None
@@ -1718,6 +1722,8 @@ class PrintJob:
                             self.gcode_total_filament_volume = ""
                             self.gcode_total_filament_weight = ""
                             self.gcode_verified_user = "false"
+                            self.gcode_user_on_list = "false"
+                            self.gcode_user_allowed_prefix = "false"
                             try:
                                 with open(gcode_path, 'r', encoding='utf-8') as gcode_file:
                                     for line in gcode_file:
@@ -1771,6 +1777,11 @@ class PrintJob:
                                             with open(auth_users_path, 'r') as f:
                                                 auth_users_data = json.load(f)
                                                 user_info = next((u for u in auth_users_data.get("users", []) if u.get("username") == self.gcode_user and u.get("enabled")), None)
+                                                if user_info:
+                                                    self.gcode_user_on_list = "true"
+                                                    allowed_prefixes = user_info.get("allowed_prefixes", [])
+                                                    if any(self._subtask_name.startswith(prefix) for prefix in allowed_prefixes):
+                                                        self.gcode_user_allowed_prefix = "true"
                                         except Exception as e:
                                             LOGGER.error(f"Failed to load auth users from {auth_users_path}: {e}")
 

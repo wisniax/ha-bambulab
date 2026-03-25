@@ -526,6 +526,12 @@
       "gcode_verified_user": {
         "name": "Verified User"
       },
+      "gcode_user_on_list": {
+        "name": "User on list"
+      },
+      "gcode_user_allowed_prefix": {
+        "name": "Allowed prefix"
+      },
       "remaining_drying_time": {
         "name": "Remaining drying time"
       },
